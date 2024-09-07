@@ -1,9 +1,1 @@
-# iOS-Face-Detection
-Face and Face Landmarks detection on iOS
-
-This is simple Proof of Concept for Face Detection and Face Tracking. App is able to:
-1. Detect face in an image
-2. Detect and Track Face in real-time using the built-in camera
-3. Detect and track face landmarks in real-time
-
-Explanation of code in a form of video: https://youtu.be/cRMMRzk3oKY
+For my Master's graduation project in Computer Engineering, I developed an iOS app for live face detection and emotion recognition using Swift. The app accesses the front camera to detect faces and predict emotions. It works asynchronously to update the UI with yellow rectangles for detected faces and emotion labels. I also trained a custom model using CoreML and CreateML, working with a dataset to enable accurate real-time emotion prediction within the app.
