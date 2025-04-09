@@ -11,6 +11,21 @@ class StillImageViewController: UIViewController {
     var imageName : String = "neutral"
     @IBOutlet weak var emotionLabel: UILabel!
     
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // Check if model exists in bundle
+        if let modelURL = Bundle.main.url(forResource: "EmotionClassificationModel", withExtension: "mlmodelc") {
+            print("Model found at: \(modelURL)")
+        } else {
+            print("Model not found in bundle!")
+            
+            // Check all bundle resources
+            let urls = Bundle.main.urls(forResourcesWithExtension: "mlmodelc", subdirectory: nil)
+            print("Available model files: \(urls ?? [])")
+        }
+    }
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         emotionLabel.font = UIFont.systemFont(ofSize: 24, weight: .bold)
@@ -21,10 +36,14 @@ class StillImageViewController: UIViewController {
         if let image = UIImage(named: imageName) {
             imageView.image = image
             
-            guard let cgImage = image.cgImage else {
+            // Resize image to smaller dimensions before processing
+            let processingSize = CGSize(width: 300, height: 300)
+            guard let resizedImage = resizeImage(image, to: processingSize),
+                  let cgImage = resizedImage.cgImage else {
+                emotionLabel.text = "Error: Image processing failed"
                 return
             }
-    
+            
             calculateScaledImageRect()
             performVisionRequest(image: cgImage)
         }
@@ -32,38 +51,77 @@ class StillImageViewController: UIViewController {
     }
     func predict(with imageName: String) -> EmotionClassificationModelOutput? {
         do {
-            // Load the Core ML model
+            // Load model from main bundle explicitly
+            guard let modelURL = Bundle.main.url(forResource: "EmotionClassificationModel", withExtension: "mlmodelc") else {
+                print("Error: Model file not found in bundle")
+                return nil
+            }
+            
+            print("Loading model from: \(modelURL)")
+            
+            // Create configuration with explicit resource constraints
             let config = MLModelConfiguration()
-            let model = try EmotionClassificationModel(configuration: config)
+            config.computeUnits = .cpuAndGPU // Try using CPU and GPU together
+            config.allowLowPrecisionAccumulationOnGPU = true // Better performance
+            
+            // Load model directly from URL
+            let model = try MLModel(contentsOf: modelURL, configuration: config)
+            let emotionClassifier = try EmotionClassificationModel(model: model)
             
             // Load the image from the bundle
             guard let image = UIImage(named: imageName) else {
                 print("Error: Unable to load image.")
                 return nil
             }
-
+            
+            // Resize image before processing
+            let processingSize = CGSize(width: 300, height: 300)
+            guard let resizedImage = resizeImage(image, to: processingSize) else {
+                print("Error: Unable to resize image.")
+                return nil
+            }
+            
             // Convert the UIImage to a CVPixelBuffer
-            guard let pixelBuffer = pixelBuffer(from: image) else {
+            guard let pixelBuffer = pixelBuffer(from: resizedImage) else {
                 print("Error: Unable to convert image to pixel buffer.")
                 return nil
             }
-
+            
             // Make a prediction using the model
-            let prediction = try model.prediction(image: pixelBuffer)
+            let prediction = try emotionClassifier.prediction(image: pixelBuffer)
             return prediction
         } catch {
-            print("Error loading the model: \(error)")
-            assertionFailure(error.localizedDescription)
+            print("Detailed error loading model: \(error)")
             return nil
         }
     }
+
+    // Helper function for image resizing
+    func resizeImage(_ image: UIImage, to size: CGSize) -> UIImage? {
+        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+        image.draw(in: CGRect(origin: .zero, size: size))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return resizedImage
+    }
+    
     func pixelBuffer(from image: UIImage) -> CVPixelBuffer? {
-        let size = CGSize(width: 48, height: 48) // Adjust the size based on your model input requirements
-
+        print("Converting image: \(image.size.width) x \(image.size.height)")
+            
+        let size = CGSize(width: 48, height: 48) // Model input requirements
+            
         var pixelBuffer: CVPixelBuffer?
-        let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(size.width), Int(size.height), kCVPixelFormatType_32BGRA, nil, &pixelBuffer)
-
-        guard status == kCVReturnSuccess else {
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            Int(size.width),
+            Int(size.height),
+            kCVPixelFormatType_32BGRA,
+            [kCVPixelBufferCGImageCompatibilityKey: true, kCVPixelBufferCGBitmapContextCompatibilityKey: true] as CFDictionary,
+            &pixelBuffer
+        )
+            
+        if status != kCVReturnSuccess {
+            print("Failed to create pixel buffer with status: \(status)")
             return nil
         }
 
@@ -114,23 +172,43 @@ class StillImageViewController: UIViewController {
     }
     
     private func performVisionRequest(image: CGImage) {
-         
-         let faceDetectionRequest = VNDetectFaceRectanglesRequest(completionHandler: self.handleFaceDetectionRequest)
-
-         let requests = [faceDetectionRequest]
-         let imageRequestHandler = VNImageRequestHandler(cgImage: image,
-                                                         orientation: .up,
-                                                         options: [:])
-         
-         DispatchQueue.global(qos: .userInitiated).async {
-             do {
-                 try imageRequestHandler.perform(requests)
-             } catch let error as NSError {
-                 print(error)
-                 return
-             }
-         }
-     }
+        // Create a new request with better error handling
+        let faceDetectionRequest = VNDetectFaceRectanglesRequest { [weak self] request, error in
+            if let error = error {
+                print("Face detection error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self?.emotionLabel.text = "Error: Face detection failed"
+                }
+                return
+            }
+            
+            self?.handleFaceDetectionRequest(request: request, error: error)
+        }
+        
+        // Increase request priority and add configuration
+        faceDetectionRequest.usesCPUOnly = false // Use Neural Engine if available
+        
+        let requests = [faceDetectionRequest]
+        
+        // Explicitly specify orientation and other parameters
+        let imageRequestHandler = VNImageRequestHandler(
+            cgImage: image,
+            orientation: .up,
+            options: [VNImageOption.ciContext: CIContext()]
+        )
+        
+        // Use higher priority queue
+        DispatchQueue.global(qos: .userInteractive).async {
+            do {
+                try imageRequestHandler.perform(requests)
+            } catch let error as NSError {
+                print("ImageRequestHandler error: \(error), \(error.userInfo)")
+                DispatchQueue.main.async {
+                    self.emotionLabel.text = "Error: Vision processing failed"
+                }
+            }
+        }
+    }
     
     private func handleFaceDetectionRequest(request: VNRequest?, error: Error?) {
         if let requestError = error as NSError? {

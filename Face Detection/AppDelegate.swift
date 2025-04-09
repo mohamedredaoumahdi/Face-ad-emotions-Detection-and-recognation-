@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreML
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -14,7 +15,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Pre-warm the Vision and CoreML subsystems
+        DispatchQueue.global(qos: .background).async {
+            // Load model once to initialize the framework
+            do {
+                let config = MLModelConfiguration()
+                let _ = try EmotionClassificationModel(configuration: config)
+                print("Model pre-warmed successfully")
+            } catch {
+                print("Model pre-warming failed: \(error)")
+            }
+        }
+        
         return true
     }
 

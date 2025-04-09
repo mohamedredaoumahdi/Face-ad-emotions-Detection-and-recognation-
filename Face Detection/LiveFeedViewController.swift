@@ -28,7 +28,10 @@ class LiveFeedViewController: UIViewController {
         super.viewDidLoad()
         setupCamera()
         setupEmotionLabel()
-        captureSession.startRunning()
+        // Start capture session on a background thread
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.captureSession.startRunning()
+        }
     }
     
     // Setup the position of our emotionLabel
@@ -185,22 +188,29 @@ extension LiveFeedViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     
     private func detectEmotion(for imageBuffer: CVPixelBuffer) -> String? {
         do {
-            // Load the Core ML model
-            let emotionModel =  EmotionClassificationModel()
-
-            // Prepare the input features
+            // Use explicit model loading from bundle
+            guard let modelURL = Bundle.main.url(forResource: "EmotionClassificationModel", withExtension: "mlmodelc") else {
+                print("Error: Model file not found in bundle")
+                return "Model not found"
+            }
+            
+            // Create configuration
+            let config = MLModelConfiguration()
+            config.computeUnits = .cpuAndGPU
+            
+            // Load model from URL
+            let model = try MLModel(contentsOf: modelURL, configuration: config)
+            let emotionClassifier = try EmotionClassificationModel(model: model)
+            
+            // Create input with explicit dimensions
             let emotionModelInput = EmotionClassificationModelInput(image: imageBuffer)
-
+            
             // Perform prediction
-            let emotionModelOutput = try emotionModel.prediction(input: emotionModelInput)
-
-            // Access the predicted emotion
-            let predictedEmotion = emotionModelOutput.classLabel
-
-            return predictedEmotion
-        } catch let error {
-            print("Error loading or using the Core ML model: \(error)")
-            return nil
+            let emotionModelOutput = try emotionClassifier.prediction(input: emotionModelInput)
+            return emotionModelOutput.classLabel
+        } catch {
+            print("Emotion detection error: \(error)")
+            return "Error"
         }
     }
     private func updateEmotionLabel(_ emotion: String) {
