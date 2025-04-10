@@ -8,7 +8,6 @@ class StillImageViewController: UIViewController {
     // MARK: - Properties
     
     private var scaledImageRect: CGRect?
-    private var imageName: String = "neutral"
     private var selectedImage: UIImage?
     private var currentPrediction: EmotionClassificationModelOutput?
     
@@ -37,7 +36,7 @@ class StillImageViewController: UIViewController {
     
     private let galleryButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Choose from Gallery", for: .normal)
+        button.setTitle(" Import", for: .normal)
         button.setImage(UIImage(systemName: "photo.on.rectangle"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor(named: "AccentColor") ?? .systemPurple
@@ -57,7 +56,7 @@ class StillImageViewController: UIViewController {
     
     private let cameraButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Take Photo", for: .normal)
+        button.setTitle(" Camera", for: .normal)
         button.setImage(UIImage(systemName: "camera"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor(named: "AccentColor") ?? .systemPurple
@@ -103,30 +102,50 @@ class StillImageViewController: UIViewController {
         return button
     }()
     
+    private let placeholderView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.darkGray.withAlphaComponent(0.3)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        // Ensure placeholder doesn't block touches to buttons underneath
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+    
+    private let placeholderImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(systemName: "photo.on.rectangle.angled")
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .white.withAlphaComponent(0.7)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+    
+    private let placeholderLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Select an image to analyze"
+        label.textColor = .white
+        label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
     // MARK: - Lifecycle Methods
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupPlaceholderView()
         setupActions()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        // Use a bundled default image or show a placeholder
-        if let image = UIImage(named: imageName) {
-            imageView.image = image
-            selectedImage = image
-            calculateScaledImageRect()
-            processSelectedImage(image)
-        } else {
-            // If no default image is found, show a placeholder
-            let placeholder = UIImage(systemName: "photo")?.withTintColor(
-                UIColor.gray, renderingMode: .alwaysOriginal)
-            imageView.image = placeholder
-            emotionLabel.text = "Select an image to analyze"
-        }
+        // Show placeholder instead of loading a default image
+        showPlaceholderView(true)
+        emotionLabel.text = "Select an image to analyze"
+        emotionDetailsView.isHidden = true
     }
     
     override func viewDidLayoutSubviews() {
@@ -143,16 +162,26 @@ class StillImageViewController: UIViewController {
         navigationController?.setNavigationBarHidden(true, animated: false)
         view.backgroundColor = UIColor(named: "BackgroundColor") ?? .systemBackground
         
-        // Set up image view
+        // Set up image view - make sure it doesn't block interaction
         view.addSubview(imageView)
+        imageView.isUserInteractionEnabled = false
         
-        // Add UI elements
+        // Add UI elements - these should be on top of the view hierarchy
         view.addSubview(emotionLabel)
         view.addSubview(emotionDetailsView)
         emotionDetailsView.addSubview(emotionBarStackView)
         view.addSubview(galleryButton)
         view.addSubview(cameraButton)
         view.addSubview(backButton)
+        
+        // Ensure the buttons have user interaction enabled
+        galleryButton.isUserInteractionEnabled = true
+        cameraButton.isUserInteractionEnabled = true
+        backButton.isUserInteractionEnabled = true
+        
+        // Make sure buttons are fully visible and not transparent
+        galleryButton.alpha = 1.0
+        cameraButton.alpha = 1.0
         
         // Set constraints
         NSLayoutConstraint.activate([
@@ -202,6 +231,33 @@ class StillImageViewController: UIViewController {
         emotionDetailsView.isHidden = true
     }
     
+    private func setupPlaceholderView() {
+        // Insert placeholder view BEFORE the buttons so they remain on top and clickable
+        view.insertSubview(placeholderView, belowSubview: backButton)
+        placeholderView.addSubview(placeholderImageView)
+        placeholderView.addSubview(placeholderLabel)
+        
+        // Make sure placeholder doesn't interfere with user interaction
+        placeholderView.isUserInteractionEnabled = false
+        
+        NSLayoutConstraint.activate([
+            placeholderView.topAnchor.constraint(equalTo: view.topAnchor),
+            placeholderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            placeholderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            placeholderView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            placeholderImageView.centerXAnchor.constraint(equalTo: placeholderView.centerXAnchor),
+            placeholderImageView.centerYAnchor.constraint(equalTo: placeholderView.centerYAnchor, constant: -50),
+            placeholderImageView.widthAnchor.constraint(equalToConstant: 100),
+            placeholderImageView.heightAnchor.constraint(equalToConstant: 100),
+            
+            placeholderLabel.topAnchor.constraint(equalTo: placeholderImageView.bottomAnchor, constant: 20),
+            placeholderLabel.centerXAnchor.constraint(equalTo: placeholderView.centerXAnchor),
+            placeholderLabel.leadingAnchor.constraint(equalTo: placeholderView.leadingAnchor, constant: 20),
+            placeholderLabel.trailingAnchor.constraint(equalTo: placeholderView.trailingAnchor, constant: -20)
+        ])
+    }
+    
     private func setupActions() {
         galleryButton.addTarget(self, action: #selector(openGallery), for: .touchUpInside)
         cameraButton.addTarget(self, action: #selector(openCamera), for: .touchUpInside)
@@ -237,9 +293,28 @@ class StillImageViewController: UIViewController {
         navigationController?.popViewController(animated: true)
     }
     
+    // MARK: - Helper Methods
+    
+    private func showPlaceholderView(_ show: Bool) {
+        placeholderView.isHidden = !show
+        imageView.isHidden = show
+        
+        // Make sure buttons are always on top and interactive
+        if show {
+            // Bring buttons to front when placeholder is shown
+            view.bringSubviewToFront(galleryButton)
+            view.bringSubviewToFront(cameraButton)
+            view.bringSubviewToFront(backButton)
+            view.bringSubviewToFront(emotionLabel)
+        }
+    }
+    
     // MARK: - Image Processing
     
     private func processSelectedImage(_ image: UIImage) {
+        // Hide placeholder and show the real image
+        showPlaceholderView(false)
+        
         // Don't set the image again, it's already set in the picker completion
         // Instead, just start the analysis
         emotionLabel.text = "Analyzing..."
