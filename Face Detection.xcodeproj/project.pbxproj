@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		16136AED2DA7D62500513BE8 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 16136AEC2DA7D62500513BE8 /* Colors.xcassets */; };
 		169E41362B63F8560019E360 /* EmotionClassificationModel.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 169E41352B63F8560019E360 /* EmotionClassificationModel.mlmodel */; };
 		AA5029E024BEECD4006576A4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5029DF24BEECD4006576A4 /* AppDelegate.swift */; };
 		AA5029E224BEECD4006576A4 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5029E124BEECD4006576A4 /* SceneDelegate.swift */; };
 		AA5029E424BEECD4006576A4 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5029E324BEECD4006576A4 /* ViewController.swift */; };
-		AA5029E724BEECD4006576A4 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA5029E524BEECD4006576A4 /* Main.storyboard */; };
 		AA5029E924BEECD8006576A4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA5029E824BEECD8006576A4 /* Assets.xcassets */; };
 		AA5029EC24BEECD8006576A4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA5029EA24BEECD8006576A4 /* LaunchScreen.storyboard */; };
 		AA5029F424BEEEC2006576A4 /* StillImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5029F324BEEEC2006576A4 /* StillImageViewController.swift */; };
@@ -19,12 +19,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		16136AEC2DA7D62500513BE8 /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
 		169E41352B63F8560019E360 /* EmotionClassificationModel.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = EmotionClassificationModel.mlmodel; sourceTree = "<group>"; };
 		AA5029DC24BEECD4006576A4 /* Face Detection.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Face Detection.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA5029DF24BEECD4006576A4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AA5029E124BEECD4006576A4 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		AA5029E324BEECD4006576A4 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		AA5029E624BEECD4006576A4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		AA5029E824BEECD8006576A4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA5029EB24BEECD8006576A4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		AA5029ED24BEECD8006576A4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -73,9 +73,9 @@
 				AA5029DF24BEECD4006576A4 /* AppDelegate.swift */,
 				AA5029E124BEECD4006576A4 /* SceneDelegate.swift */,
 				AA5029F324BEEEC2006576A4 /* StillImageViewController.swift */,
+				16136AEC2DA7D62500513BE8 /* Colors.xcassets */,
 				169E41342B63F8130019E360 /* Models */,
 				AA5029E324BEECD4006576A4 /* ViewController.swift */,
-				AA5029E524BEECD4006576A4 /* Main.storyboard */,
 				AA5029E824BEECD8006576A4 /* Assets.xcassets */,
 				AA5029EA24BEECD8006576A4 /* LaunchScreen.storyboard */,
 				AA5029ED24BEECD8006576A4 /* Info.plist */,
@@ -143,8 +143,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA5029EC24BEECD8006576A4 /* LaunchScreen.storyboard in Resources */,
+				16136AED2DA7D62500513BE8 /* Colors.xcassets in Resources */,
 				AA5029E924BEECD8006576A4 /* Assets.xcassets in Resources */,
-				AA5029E724BEECD4006576A4 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -167,14 +167,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
-		AA5029E524BEECD4006576A4 /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				AA5029E624BEECD4006576A4 /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
 		AA5029EA24BEECD8006576A4 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
